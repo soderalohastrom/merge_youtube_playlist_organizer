@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw error;
       }
       
-      console.log('Sign in successful:', data); // Debug log
+      console.log('Sign in initiated:', data); // Debug log
     } catch (error) {
       console.error('Error signing in:', error);
     }
