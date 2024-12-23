@@ -1,2 +1,2 @@
-# merge_youtube_playlist_organizer
+# YouTube Playlist Organizer
  
