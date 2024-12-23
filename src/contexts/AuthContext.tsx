@@ -26,53 +26,51 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [youtubeService, setYoutubeService] = useState<YouTubeService | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  const handleSession = (session: Session | null) => {
-    if (session) {
-      const { provider_token, user } = session;
-      console.log('Processing session:', { provider_token: !!provider_token, user: !!user });
-      
-      if (provider_token && user) {
-        setYoutubeService(new YouTubeService(provider_token));
-        setUser(user);
-        setIsAuthenticated(true);
-        setAccessToken(provider_token);
+  const handleAuthChange = async (event: string, session: Session | null) => {
+    console.log('Auth event:', event, 'Session:', session ? 'exists' : 'null');
+    
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (session?.provider_token) {
+        try {
+          const service = new YouTubeService(session.provider_token);
+          setYoutubeService(service);
+          setUser(session.user);
+          setIsAuthenticated(true);
+          setAccessToken(session.provider_token);
+          console.log('Successfully set up YouTube service');
+        } catch (error) {
+          console.error('Error setting up YouTube service:', error);
+          setIsAuthenticated(false);
+        }
       } else {
-        console.log('Missing provider_token or user in session');
+        console.log('No provider token in session');
         setIsAuthenticated(false);
-        setUser(null);
-        setYoutubeService(null);
-        setAccessToken(null);
       }
-    } else {
-      console.log('No session available');
-      setIsAuthenticated(false);
-      setUser(null);
+    } else if (event === 'SIGNED_OUT') {
+      console.log('User signed out');
       setYoutubeService(null);
+      setUser(null);
+      setIsAuthenticated(false);
       setAccessToken(null);
     }
+    
     setIsLoading(false);
   };
 
-  const checkUser = async (client: SupabaseClient) => {
-    try {
-      const { data: { session }, error } = await client.auth.getSession();
-      if (error) {
-        console.error('Error getting session:', error);
-        throw error;
-      }
-      handleSession(session);
-    } catch (error) {
-      console.error('Error checking user session:', error);
-      handleSession(null);
-    }
-  };
-
   useEffect(() => {
-    checkUser(supabase);
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting initial session:', error);
+        setIsLoading(false);
+        return;
+      }
+      handleAuthChange('INITIAL_SESSION', session);
+    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', { event, session });
-      handleSession(session);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      handleAuthChange(event, session);
     });
 
     return () => {
@@ -82,8 +80,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signIn = async () => {
     try {
-      console.log('Starting sign in process');
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      console.log('Starting Google OAuth sign in');
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           scopes: 'https://www.googleapis.com/auth/youtube',
@@ -94,25 +92,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         }
       });
-      
+
       if (error) {
-        console.error('Sign in error:', error);
+        console.error('OAuth sign in error:', error);
         throw error;
       }
-      
-      console.log('Sign in initiated:', data);
     } catch (error) {
-      console.error('Error signing in:', error);
+      console.error('Sign in process error:', error);
+      setIsAuthenticated(false);
     }
   };
 
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      handleSession(null);
+      if (error) {
+        console.error('Sign out error:', error);
+        throw error;
+      }
+      setYoutubeService(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      setAccessToken(null);
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Sign out process error:', error);
     }
   };
 
