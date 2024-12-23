@@ -2,8 +2,27 @@ import React from 'react';
 import { useAuth } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import { DragDropProvider } from './contexts/DragDropContext';
+import { YouTubeProvider, useYouTube } from './contexts/YouTubeContext';
 
-const App = () => {
+const MockToggle = () => {
+  const { isUsingMock, setUseMock } = useYouTube();
+  
+  return (
+    <div className="fixed top-4 right-4 flex items-center gap-2">
+      <span className="text-sm text-gray-600">
+        {isUsingMock ? 'Using Mock Data' : 'Using Real Data'}
+      </span>
+      <button
+        onClick={() => setUseMock(!isUsingMock)}
+        className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+      >
+        Toggle Mock Mode
+      </button>
+    </div>
+  );
+};
+
+const AppContent = () => {
   const { isAuthenticated, isLoading, user, signIn } = useAuth();
 
   if (isLoading) {
@@ -30,8 +49,19 @@ const App = () => {
 
   return (
     <DragDropProvider>
+      <MockToggle />
       <MainLayout />
     </DragDropProvider>
+  );
+};
+
+const App = () => {
+  const { user, accessToken } = useAuth();
+
+  return (
+    <YouTubeProvider user={user} accessToken={accessToken}>
+      <AppContent />
+    </YouTubeProvider>
   );
 };
 

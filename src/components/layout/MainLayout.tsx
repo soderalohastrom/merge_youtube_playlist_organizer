@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
-import { useAuth } from '../../contexts/AuthContext';
+import { useYouTube } from '../../contexts/YouTubeContext';
 import { ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable';
 import PlaylistPanel from './PlaylistPanel';
 import VideoPanel from './VideoPanel';
@@ -9,7 +9,7 @@ import { YouTubePlaylist, YouTubeVideo } from '../../types/youtube';
 type QueryKeys = ['playlists'] | ['playlist-videos', string | null];
 
 export const MainLayout = () => {
-  const { youtubeService } = useAuth();
+  const { youtubeService } = useYouTube();
   const queryClient = useQueryClient();
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
 
