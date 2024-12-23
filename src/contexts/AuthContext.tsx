@@ -80,13 +80,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (error) throw error;
 
       if (session) {
-        const { provider_token, user } = session;
-        if (provider_token && user) {
-          const { data, error }: { data: Database['public']['Tables']['user_sessions']['Row'] | null, error: any } = await supabase
-            .from<Database['public']['Tables']['user_sessions']['Row']>('user_sessions')
+        console.log('Supabase auth session:', session);
+        const { provider_token, user, access_token, refresh_token } = session;
+        console.log('provider_token:', provider_token);
+        console.log('user:', user);
+        console.log('access_token:', access_token);
+        console.log('refresh_token:', refresh_token);
+        if (provider_token && user && access_token && refresh_token) {
+          const { data, error } = await supabase
+            .from<'user_sessions', Database['public']['Tables']['user_sessions']['Row']>('user_sessions')
             .select('*', { head: true })
             .eq('user_id', user.id)
-            .single();
+            .single()
+            .then(({ data, error }) => ({ data, error }));
 
           if (error) {
             console.error('Error retrieving user session:', error);
@@ -102,15 +108,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               const access_token = session.access_token;
               const refresh_token = session.refresh_token;
               if (access_token && refresh_token) {
+                const data: Required<Omit<Database['public']['Tables']['user_sessions']['Insert'], 'id'>> = {
+                  user_id: user.id,
+                  email: user.email || '',
+                  access_token,
+                  refresh_token,
+                  provider: 'google',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                };
                 const { error } = await supabase
-                  .from<Database['public']['Tables']['user_sessions']['Insert']>('user_sessions')
-                  .insert({
-                    user_id: user.id,
-                    email: user.email || '',
-                    access_token,
-                    refresh_token,
-                    provider: 'google'
-                  });
+                  .from<'user_sessions', Database['public']['Tables']['user_sessions']['Insert']>('user_sessions')
+                  .insert(data);
 
                 if (error) {
                   console.error('Error saving user session:', error);
@@ -138,10 +147,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const { provider_token, user } = session;
         if (provider_token && user) {
           const { data, error } = await supabase
-            .from<Database['public']['Tables']['user_sessions']['Row']>('user_sessions')
+            .from<'user_sessions', Database['public']['Tables']['user_sessions']['Row']>('user_sessions')
             .select('*')
             .eq('user_id', user.id)
-            .single();
+            .single()
+            .then(({ data, error }) => ({ data, error }));
 
           if (error) {
             console.error('Error retrieving user session:', error);
@@ -157,15 +167,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               const access_token = session.access_token;
               const refresh_token = session.refresh_token;
               if (access_token && refresh_token) {
+                const data: Required<Omit<Database['public']['Tables']['user_sessions']['Insert'], 'id'>> = {
+                  user_id: user.id,
+                  email: user.email,
+                  access_token,
+                  refresh_token,
+                  provider: 'google',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                };
                 const { error } = await supabase
-                  .from<Database['public']['Tables']['user_sessions']['Insert']>('user_sessions')
-                  .insert({
-                    user_id: user.id,
-                    email: user.email,
-                    access_token,
-                    refresh_token,
-                    provider: 'google'
-                  });
+                  .from<'user_sessions', Database['public']['Tables']['user_sessions']['Insert']>('user_sessions')
+                  .insert(data);
 
                 if (error) {
                   console.error('Error saving user session:', error);
@@ -225,9 +238,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (userId) {
       try {
         const { error } = await supabase
-          .from<Database['public']['Tables']['user_sessions']['Row']>('user_sessions')
+          .from<'user_sessions', Database['public']['Tables']['user_sessions']['Row']>('user_sessions')
           .delete()
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .then(({ error }) => error);
 
         if (error) {
           console.error('Error deleting user session:', error);
