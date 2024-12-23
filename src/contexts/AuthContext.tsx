@@ -33,12 +33,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (session) {
         const { provider_token, user } = session;
+        console.log('Session found:', { provider_token, user }); // Debug log
         if (provider_token && user) {
           setYoutubeService(new YouTubeService(provider_token));
           setUser(user);
           setIsAuthenticated(true);
           setAccessToken(provider_token);
         }
+      } else {
+        console.log('No session found'); // Debug log
+        setIsAuthenticated(false);
+        setUser(null);
+        setYoutubeService(null);
+        setAccessToken(null);
       }
     } catch (error) {
       console.error('Error checking user session:', error);
@@ -54,16 +61,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     checkUser(supabase);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', { event, session }); // Debug log
+      
       if (session) {
         const { provider_token, user } = session;
         if (provider_token && user) {
+          console.log('Setting authenticated state with:', { provider_token, user }); // Debug log
           setYoutubeService(new YouTubeService(provider_token));
           setUser(user);
           setIsAuthenticated(true);
           setAccessToken(provider_token);
         }
       } else {
+        console.log('Clearing authenticated state'); // Debug log
         setYoutubeService(null);
         setUser(null);
         setIsAuthenticated(false);
@@ -79,13 +90,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signIn = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('Starting sign in process'); // Debug log
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          scopes: 'https://www.googleapis.com/auth/youtube'
+          scopes: 'https://www.googleapis.com/auth/youtube',
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Sign in error:', error); // Debug log
+        throw error;
+      }
+      
+      console.log('Sign in successful:', data); // Debug log
     } catch (error) {
       console.error('Error signing in:', error);
     }
