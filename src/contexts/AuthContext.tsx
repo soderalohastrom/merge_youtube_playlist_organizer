@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { createClient, SupabaseClient, User, Session, AuthSession, AuthChangeEvent, PostgrestResponse } from '@supabase/supabase-js';
-import { getUserSession, saveUserSession, deleteUserSession } from '../services/supabase';
+import { SupabaseClient, User, Session } from '@supabase/supabase-js';
 import YouTubeService from '../services/youtube';
 import { supabase } from '../utils/supabase';
 
@@ -83,16 +82,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (session) {
         const { provider_token, user } = session;
         if (provider_token && user) {
-          const { data: userSession, error } = await supabase
+          const { data, error }: { data: Database['public']['Tables']['user_sessions']['Row'] | null, error: any } = await supabase
             .from<Database['public']['Tables']['user_sessions']['Row']>('user_sessions')
-            .select('*')
+            .select('*', { head: true })
             .eq('user_id', user.id)
             .single();
 
           if (error) {
             console.error('Error retrieving user session:', error);
-          } else if (userSession) {
-            setYoutubeService(new YouTubeService(userSession.access_token));
+          } else if (data) {
+            setYoutubeService(new YouTubeService(data.access_token));
             setUser(user);
             setIsAuthenticated(true);
           } else {
@@ -138,7 +137,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (session) {
         const { provider_token, user } = session;
         if (provider_token && user) {
-          const { data: userSession, error } = await supabase
+          const { data, error } = await supabase
             .from<Database['public']['Tables']['user_sessions']['Row']>('user_sessions')
             .select('*')
             .eq('user_id', user.id)
@@ -146,8 +145,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
           if (error) {
             console.error('Error retrieving user session:', error);
-          } else if (userSession) {
-            setYoutubeService(new YouTubeService(userSession.access_token));
+          } else if (data) {
+            setYoutubeService(new YouTubeService(data.access_token));
             setUser(user);
             setIsAuthenticated(true);
           } else {
