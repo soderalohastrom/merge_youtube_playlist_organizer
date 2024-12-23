@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               const access_token = session.access_token;
               const refresh_token = session.refresh_token;
               if (access_token && refresh_token) {
-                const data: Required<Omit<Database['public']['Tables']['user_sessions']['Insert'], 'id'>> = {
+                const insertData: Required<Omit<Database['public']['Tables']['user_sessions']['Insert'], 'id'>> = {
                   user_id: user.id,
                   email: user.email || '',
                   access_token,
@@ -119,7 +119,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 };
                 const { error } = await supabase
                   .from<'user_sessions', Database['public']['Tables']['user_sessions']['Insert']>('user_sessions')
-                  .insert(data);
+                  .insert(insertData)
+                  .then(({ error }) => error);
+
+                if (error) {
+                  console.error('Error saving user session:', error);
+                } else {
+                  setYoutubeService(new YouTubeService(access_token));
+                  setUser(user);
+                  setIsAuthenticated(true);
+                }
+
+                if (error) {
+                  console.error('Error saving user session:', error);
+                } else {
+                  setYoutubeService(new YouTubeService(access_token));
+                  setUser(user);
+                  setIsAuthenticated(true);
+                }
 
                 if (error) {
                   console.error('Error saving user session:', error);
@@ -167,7 +184,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               const access_token = session.access_token;
               const refresh_token = session.refresh_token;
               if (access_token && refresh_token) {
-                const data: Required<Omit<Database['public']['Tables']['user_sessions']['Insert'], 'id'>> = {
+                const insertData: Required<Omit<Database['public']['Tables']['user_sessions']['Insert'], 'id'>> = {
                   user_id: user.id,
                   email: user.email,
                   access_token,
@@ -178,7 +195,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 };
                 const { error } = await supabase
                   .from<'user_sessions', Database['public']['Tables']['user_sessions']['Insert']>('user_sessions')
-                  .insert(data);
+                  .insert(insertData)
+                  .then(({ error }) => error);
+
+                if (error) {
+                  console.error('Error saving user session:', error);
+                } else {
+                  setYoutubeService(new YouTubeService(access_token));
+                  setUser(user);
+                  setIsAuthenticated(true);
+                }
+
+                if (error) {
+                  console.error('Error saving user session:', error);
+                } else {
+                  setYoutubeService(new YouTubeService(access_token));
+                  setUser(user);
+                  setIsAuthenticated(true);
+                }
 
                 if (error) {
                   console.error('Error saving user session:', error);
